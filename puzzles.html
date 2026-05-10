@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Puzzle Trainer – Chess Trainer</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/chessboard.min.css">
+</head>
+<body>
+
+<nav>
+  <span class="logo">Chess Trainer</span>
+  <a href="index.html">Home</a>
+  <a href="puzzles.html" class="active">Puzzles</a>
+  <a href="replay.html">Game Replay</a>
+  <a href="analysis.html">My Mistakes</a>
+</nav>
+
+<div class="puzzle-layout">
+
+  <!-- Sidebar: theme list -->
+  <aside class="sidebar">
+    <div class="theme-item all-due-item" data-theme="_all" id="all-due-row">
+      <span class="theme-name" style="font-weight:700">⟳ All Due</span>
+      <span class="theme-count" id="count-all">–</span>
+    </div>
+    <div class="sidebar-title" style="margin-top:8px">Tactics</div>
+    <div class="theme-item" data-theme="fork"><span class="theme-name">Fork</span><span class="theme-count" id="count-fork">–</span></div>
+    <div class="theme-item" data-theme="pin"><span class="theme-name">Pin</span><span class="theme-count" id="count-pin">–</span></div>
+    <div class="theme-item" data-theme="skewer"><span class="theme-name">Skewer</span><span class="theme-count" id="count-skewer">–</span></div>
+    <div class="theme-item" data-theme="discoveredAttack"><span class="theme-name">Discovered Attack</span><span class="theme-count" id="count-discoveredAttack">–</span></div>
+    <div class="theme-item" data-theme="doubleCheck"><span class="theme-name">Double Check</span><span class="theme-count" id="count-doubleCheck">–</span></div>
+    <div class="theme-item" data-theme="deflection"><span class="theme-name">Deflection</span><span class="theme-count" id="count-deflection">–</span></div>
+    <div class="theme-item" data-theme="sacrifice"><span class="theme-name">Sacrifice</span><span class="theme-count" id="count-sacrifice">–</span></div>
+    <div class="theme-item" data-theme="xRayAttack"><span class="theme-name">X-Ray Attack</span><span class="theme-count" id="count-xRayAttack">–</span></div>
+    <div class="theme-item" data-theme="hangingPiece"><span class="theme-name">Hanging Piece</span><span class="theme-count" id="count-hangingPiece">–</span></div>
+    <div class="theme-item" data-theme="trappedPiece"><span class="theme-name">Trapped Piece</span><span class="theme-count" id="count-trappedPiece">–</span></div>
+    <div class="theme-item" data-theme="attraction"><span class="theme-name">Attraction</span><span class="theme-count" id="count-attraction">–</span></div>
+    <div class="theme-item" data-theme="interference"><span class="theme-name">Interference</span><span class="theme-count" id="count-interference">–</span></div>
+
+    <div class="sidebar-title" style="margin-top:16px">Checkmate</div>
+    <div class="theme-item" data-theme="mateIn1"><span class="theme-name">Mate in 1</span><span class="theme-count" id="count-mateIn1">–</span></div>
+    <div class="theme-item" data-theme="mateIn2"><span class="theme-name">Mate in 2</span><span class="theme-count" id="count-mateIn2">–</span></div>
+    <div class="theme-item" data-theme="mateIn3"><span class="theme-name">Mate in 3</span><span class="theme-count" id="count-mateIn3">–</span></div>
+    <div class="theme-item" data-theme="smotheredMate"><span class="theme-name">Smothered Mate</span><span class="theme-count" id="count-smotheredMate">–</span></div>
+
+    <div class="sidebar-title" style="margin-top:16px">Endgame</div>
+    <div class="theme-item" data-theme="pawnEndgame"><span class="theme-name">Pawn Endgame</span><span class="theme-count" id="count-pawnEndgame">–</span></div>
+    <div class="theme-item" data-theme="rookEndgame"><span class="theme-name">Rook Endgame</span><span class="theme-count" id="count-rookEndgame">–</span></div>
+    <div class="theme-item" data-theme="queenEndgame"><span class="theme-name">Queen Endgame</span><span class="theme-count" id="count-queenEndgame">–</span></div>
+
+    <div class="sidebar-title" style="margin-top:16px">Other</div>
+    <div class="theme-item" data-theme="promotion"><span class="theme-name">Promotion</span><span class="theme-count" id="count-promotion">–</span></div>
+    <div class="theme-item" data-theme="enPassant"><span class="theme-name">En Passant</span><span class="theme-count" id="count-enPassant">–</span></div>
+  </aside>
+
+  <!-- Main puzzle area -->
+  <main class="puzzle-main">
+    <div id="status-msg" style="color:#888;font-size:0.95rem;text-align:center;padding:40px 20px">
+      Select a theme on the left to start training.<br>
+      <span id="data-warning" style="display:none;color:#e94560;font-size:0.85rem;margin-top:8px">
+        No puzzles loaded yet — run <code>setup_puzzles.py</code> first.
+      </span>
+    </div>
+
+    <div id="puzzle-ui" style="display:none;flex-direction:column;align-items:center;gap:16px">
+      <div class="info-bar">
+        <span id="puzzle-info" style="color:#888;font-size:0.85rem"></span>
+        <span id="puzzle-due-count" style="color:#888;font-size:0.85rem"></span>
+      </div>
+
+      <div class="board-wrap" id="board-wrap">
+        <div id="board"></div>
+      </div>
+
+      <div class="feedback-area">
+        <div class="feedback" id="feedback"></div>
+        <div class="btn-row" id="action-btns" style="display:none">
+          <button class="btn btn-secondary" id="reveal-btn" onclick="revealSolution()" style="display:none">Show Solution</button>
+          <div id="rating-btns" style="display:none;gap:8px;"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+</div>
+
+<script src="js/lib/jquery.min.js"></script>
+<script src="js/lib/chess.min.js"></script>
+<script src="js/lib/chessboard.min.js"></script>
+<script src="data/puzzles.js"></script>
+<script src="js/puzzles.js"></script>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Replay – Chess Trainer</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/chessboard.min.css">
+</head>
+<body>
+
+<nav>
+  <span class="logo">Chess Trainer</span>
+  <a href="index.html">Home</a>
+  <a href="puzzles.html">Puzzles</a>
+  <a href="replay.html" class="active">Game Replay</a>
+  <a href="analysis.html">My Mistakes</a>
+</nav>
+
+<div class="replay-layout">
+
+  <!-- Sidebar: Folder list -->
+  <aside class="sidebar">
+    <div class="sidebar-new-folder">
+      <input type="text" id="new-folder-input" class="folder-input" placeholder="Folder name…" maxlength="40">
+      <button class="btn btn-primary btn-sm" onclick="createFolder()">+ New</button>
+    </div>
+    <div id="folder-list"></div>
+  </aside>
+
+  <!-- Main -->
+  <main class="replay-main">
+
+    <!-- PGN panel -->
+    <div class="pgn-panel">
+      <h2>Load a game</h2>
+      <textarea id="pgn-input" placeholder='[Event "..."]&#10;[White "..."]&#10;...&#10;&#10;1. e4 e5 2. Nf3 ...'></textarea>
+      <div class="pgn-controls">
+        <div class="side-picker">
+          <span>Play as:</span>
+          <button class="side-btn selected" id="btn-white" onclick="selectSide('w')">White</button>
+          <button class="side-btn" id="btn-black" onclick="selectSide('b')">Black</button>
+        </div>
+        <button class="btn btn-primary" onclick="loadGame()">Load Game</button>
+        <button class="btn btn-secondary" id="skip-btn" onclick="skipMove()" style="display:none">Skip / Show Move</button>
+      </div>
+      <div id="game-info" style="color:#888;font-size:0.85rem;margin-top:6px"></div>
+      <div id="save-section" style="display:none;margin-top:10px;align-items:center;gap:8px;flex-wrap:wrap">
+        <select id="folder-select" class="folder-select-input">
+          <option value="">— Select folder —</option>
+        </select>
+        <button class="btn btn-secondary btn-sm" onclick="saveCurrentGame()">Save to Folder</button>
+        <span id="save-msg" style="font-size:0.82rem;color:#4caf50"></span>
+      </div>
+    </div>
+
+    <!-- Board + Move List -->
+    <div class="replay-board-area">
+      <div style="display:flex;flex-direction:column;gap:12px;align-items:center">
+        <div class="board-wrap" id="replay-board-wrap">
+          <div id="replay-board"></div>
+        </div>
+        <div class="replay-feedback info" id="replay-feedback">Load a game to start.</div>
+        <div class="btn-row" id="replay-btn-row" style="display:none">
+          <button class="btn btn-secondary" onclick="replayPrev()">← Prev</button>
+          <button class="btn btn-secondary" onclick="replayNext()">Next →</button>
+        </div>
+      </div>
+      <div class="move-list-panel">
+        <h3>Moves</h3>
+        <div id="move-list"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script src="js/lib/jquery.min.js"></script>
+<script src="js/lib/chess.min.js"></script>
+<script src="js/lib/chessboard.min.js"></script>
+<script src="js/replay.js"></script>
+</body>
+</html>

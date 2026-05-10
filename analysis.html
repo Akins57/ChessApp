@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Mistakes – Chess Trainer</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/chessboard.min.css">
+</head>
+<body>
+
+<nav>
+  <span class="logo">Chess Trainer</span>
+  <a href="index.html">Home</a>
+  <a href="puzzles.html">Puzzles</a>
+  <a href="replay.html">Game Replay</a>
+  <a href="analysis.html" class="active">My Mistakes</a>
+</nav>
+
+<div class="analysis-layout">
+
+  <!-- Sidebar: import + stats -->
+  <aside class="analysis-sidebar">
+
+    <!-- chess.com import -->
+    <div class="import-section">
+      <div class="import-section-title">Chess.com Import</div>
+      <input type="text" id="username-input" placeholder="chess.com username" maxlength="40">
+      <div class="threshold-row">
+        <span>Min. drop:</span>
+        <select id="threshold-select">
+          <option value="2.0">Blunder (≥2.0)</option>
+          <option value="1.0">Mistake (≥1.0)</option>
+          <option value="0.5">Inaccuracy (≥0.5)</option>
+        </select>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="fetchChessComGames()">Fetch Last 3 Months</button>
+      <div id="cors-warning" style="display:none;font-size:0.75rem;color:#e6a817;line-height:1.4;margin-top:4px">
+        ⚠ Chess.com requires a local server.<br>
+        Run: <code style="background:#0f3460;padding:1px 4px;border-radius:3px">python -m http.server 8000</code><br>
+        then open <strong>http://localhost:8000</strong>
+      </div>
+    </div>
+
+    <div class="import-divider">— or paste PGN —</div>
+
+    <!-- PGN paste -->
+    <div class="import-section">
+      <textarea id="pgn-input" placeholder="Paste an analyzed PGN with [%eval] annotations..."></textarea>
+      <button class="btn btn-secondary btn-sm" onclick="analyzePgn()">Analyze PGN</button>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="progress-wrap" id="progress-wrap">
+      <div class="progress-label" id="progress-label">Analyzing…</div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-bar"></div></div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-block" id="stats-block">
+      <div class="import-section-title">Your Mistakes</div>
+      <div class="stat-row"><span>Total stored</span><span id="stat-total">0</span></div>
+      <div class="stat-row"><span>Due today</span><span id="stat-due">0</span></div>
+      <div class="stat-row"><span>New (unseen)</span><span id="stat-new">0</span></div>
+      <button class="btn-danger" onclick="clearAllMistakes()">Clear All</button>
+    </div>
+
+  </aside>
+
+  <!-- Main drill area -->
+  <main class="analysis-main">
+
+    <div id="status-msg" style="color:#888;font-size:0.95rem;text-align:center;padding:40px 20px">
+      Import your chess.com games or paste an analyzed PGN to start drilling your mistakes.
+    </div>
+
+    <div id="mistake-ui" style="display:none;flex-direction:column;align-items:center;gap:16px">
+
+      <div class="mistake-info-bar" id="mistake-info-bar">
+        <span id="mistake-game-info"></span>
+        <span class="eval-drop-badge" id="eval-drop-badge"></span>
+      </div>
+
+      <div class="board-wrap" id="board-wrap">
+        <div id="board"></div>
+      </div>
+
+      <div class="info-bar" style="width:440px">
+        <span id="mistake-side-info" style="color:#888;font-size:0.85rem"></span>
+        <span id="mistake-due-count" style="color:#888;font-size:0.85rem"></span>
+      </div>
+
+      <div class="feedback-area" style="width:440px">
+        <div class="feedback" id="feedback"></div>
+        <div class="btn-row" id="action-btns" style="display:none">
+          <button class="btn btn-secondary" id="reveal-btn" onclick="revealBestMove()" style="display:none">Show Best Move</button>
+          <div id="rating-btns" style="display:none;gap:8px;"></div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+</div>
+
+<script src="js/lib/jquery.min.js"></script>
+<script src="js/lib/chess.min.js"></script>
+<script src="js/lib/chessboard.min.js"></script>
+<script src="js/analysis.js"></script>
+</body>
+</html>
