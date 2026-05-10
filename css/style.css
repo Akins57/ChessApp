@@ -116,20 +116,20 @@ nav a:hover, nav a.active { color: #fff; }
 .board-wrap {
   position: relative;
 }
-#board { width: 440px; }
+#board { width: min(92vw, 440px); }
 
 .info-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  width: 440px;
+  width: min(92vw, 440px);
   font-size: 0.85rem;
   color: #888;
 }
 
 /* ── FEEDBACK ── */
 .feedback-area {
-  width: 440px;
+  width: min(92vw, 440px);
   min-height: 48px;
   display: flex;
   flex-direction: column;
@@ -322,7 +322,7 @@ nav a:hover, nav a.active { color: #fff; }
   gap: 28px;
   align-items: flex-start;
 }
-#replay-board { width: 440px; }
+#replay-board { width: min(92vw, 440px); }
 
 .move-list-panel {
   background: #16213e;
@@ -496,7 +496,7 @@ nav a:hover, nav a.active { color: #fff; }
 .btn-danger:hover { opacity: 0.8; }
 
 .mistake-info-bar {
-  width: 440px;
+  width: min(92vw, 440px);
   font-size: 0.83rem;
   color: #888;
   display: flex;
@@ -516,3 +516,111 @@ nav a:hover, nav a.active { color: #fff; }
 
 /* ── CHESSBOARD OVERRIDES ── */
 .square-55d63 { transition: background 0.1s; }
+
+/* ── RESPONSIVE ─────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* Nav: logo on first row, links wrap below */
+  nav {
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    padding: 10px 16px;
+  }
+  nav .logo { width: 100%; font-size: 1rem; }
+  nav a { font-size: 0.88rem; }
+
+  /* Home */
+  .home-container { padding: 32px 16px; gap: 24px; min-height: auto; }
+  .home-container h1 { font-size: 1.8rem; }
+  .home-cards { gap: 16px; }
+  .card { width: 100%; max-width: 360px; padding: 24px 20px; }
+
+  /* ── Board: fill screen width ── */
+  #board,
+  #replay-board { width: min(92vw, 440px) !important; }
+
+  /* Elements that mirror board width */
+  .info-bar,
+  .feedback-area,
+  .mistake-info-bar { width: min(92vw, 440px); }
+
+  /* ── Puzzle layout: sidebar → horizontal scroll strip ── */
+  .puzzle-layout { grid-template-columns: 1fr; }
+
+  .sidebar {
+    border-right: none;
+    border-bottom: 1px solid #0f3460;
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 4px 0;
+    /* hide scrollbar but keep scroll */
+    scrollbar-width: none;
+  }
+  .sidebar::-webkit-scrollbar { display: none; }
+  .sidebar-title { display: none; }
+  .theme-item {
+    flex-shrink: 0;
+    white-space: nowrap;
+    padding: 10px 14px;
+    font-size: 0.85rem;
+  }
+  /* hide count badges in horizontal mode — not enough space */
+  .theme-item .theme-count { display: none; }
+  .theme-item.active .theme-count { display: inline; }
+
+  .puzzle-main { padding: 16px 12px; }
+
+  /* ── Replay layout: stack sidebar then main ── */
+  .replay-layout { grid-template-columns: 1fr; }
+
+  /* Folder sidebar on mobile: compact, max 180px tall, scrollable */
+  .replay-layout .sidebar {
+    flex-direction: column;
+    max-height: 180px;
+    border-right: none;
+    border-bottom: 1px solid #0f3460;
+    overflow-y: auto;
+  }
+
+  .replay-main { padding: 12px; }
+
+  .pgn-panel { padding: 14px; }
+  .pgn-panel textarea { height: 72px; }
+
+  /* Stack board and move list vertically */
+  .replay-board-area {
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+  .move-list-panel {
+    width: min(92vw, 440px);
+    max-height: 160px;
+  }
+
+  /* Save section: stack select and button */
+  #save-section { flex-wrap: wrap; }
+
+  /* Game info: allow wrapping */
+  #game-info { white-space: normal; word-break: break-word; }
+
+  /* ── Analysis layout: stack sidebar then main ── */
+  .analysis-layout { grid-template-columns: 1fr; }
+  .analysis-sidebar {
+    border-right: none;
+    border-bottom: 1px solid #0f3460;
+    max-height: 260px;
+    overflow-y: auto;
+  }
+  .analysis-main { padding: 16px 12px; }
+
+  /* ── Buttons: easier to tap, wrap when needed ── */
+  .btn { padding: 12px 20px; font-size: 0.95rem; }
+  .btn-sm { padding: 10px 14px; }
+  .btn-again, .btn-hard, .btn-good, .btn-easy { padding: 10px 14px; }
+
+  #rating-btns { flex-wrap: wrap; }
+  .btn-row { flex-wrap: wrap; }
+}
