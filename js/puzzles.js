@@ -77,6 +77,7 @@ function getThemePuzzles(theme) {
 // ── State ────────────────────────────────────────────────────────────────────
 let board        = null;
 let game         = null;
+let tapMove      = null;
 let allPuzzles   = {};
 let currentTheme = null;
 let duePuzzles   = [];
@@ -89,11 +90,15 @@ let puzzleDone      = false;
 
 // ── Board init ───────────────────────────────────────────────────────────────
 function initBoard() {
+  if (typeof createTapToMove !== 'undefined') {
+    tapMove = createTapToMove('board', () => game, () => board, onDrop, () => !puzzleDone);
+  }
   board = Chessboard('board', {
     draggable: true,
     position: 'start',
     onDrop: onDrop,
     onSnapEnd: () => board.position(game.fen()),
+    onSquareClick: tapMove ? tapMove.onClick : undefined,
     pieceTheme: PIECE_THEME
   });
   window.addEventListener('resize', () => board.resize());
@@ -245,6 +250,7 @@ function nextPuzzle() {
 
 // ── Load a puzzle ─────────────────────────────────────────────────────────────
 function loadPuzzle(puzzle) {
+  if (tapMove) tapMove.reset();
   currentPuzzle  = puzzle;
   currentMoveIdx = 0;
   puzzleFailed   = false;

@@ -517,6 +517,14 @@ nav a:hover, nav a.active { color: #fff; }
 /* ── CHESSBOARD OVERRIDES ── */
 .square-55d63 { transition: background 0.1s; }
 
+/* ── TAP-TO-MOVE HIGHLIGHTS ── */
+.square-55d63.tap-selected {
+  background: rgba(20, 200, 60, 0.70) !important;
+}
+.square-55d63.tap-legal {
+  background: rgba(20, 200, 60, 0.30) !important;
+}
+
 /* ── RESPONSIVE ─────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
 

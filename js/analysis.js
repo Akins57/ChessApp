@@ -385,6 +385,7 @@ async function analyzePgn() {
 // ── Drill state ───────────────────────────────────────────────────────────────
 let board        = null;
 let game         = null;
+let tapMove      = null;
 let allMistakes  = [];
 let drillQueue   = [];
 let drillIndex   = 0;
@@ -395,11 +396,15 @@ let cardDone      = false;
 
 // ── Board init ────────────────────────────────────────────────────────────────
 function initBoard() {
+  if (typeof createTapToMove !== 'undefined') {
+    tapMove = createTapToMove('board', () => game, () => board, onDrop, () => currentCard && !cardDone);
+  }
   board = Chessboard('board', {
     draggable: true,
     position: 'start',
     onDrop: onDrop,
     onSnapEnd: () => board.position(game ? game.fen() : 'start'),
+    onSquareClick: tapMove ? tapMove.onClick : undefined,
     pieceTheme: PIECE_THEME_ANALYSIS
   });
   window.addEventListener('resize', () => board.resize());
@@ -414,6 +419,7 @@ function loadCard(card) {
   game = new Chess(card.fen);
   const orientation = card.playerColor === 'w' ? 'white' : 'black';
 
+  if (tapMove) tapMove.reset();
   board.destroy();
   board = Chessboard('board', {
     draggable: true,
@@ -421,6 +427,7 @@ function loadCard(card) {
     orientation,
     onDrop: onDrop,
     onSnapEnd: () => board.position(game.fen()),
+    onSquareClick: tapMove ? tapMove.onClick : undefined,
     pieceTheme: PIECE_THEME_ANALYSIS
   });
 

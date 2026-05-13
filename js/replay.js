@@ -184,6 +184,7 @@ function populateFolderSelect() {
 // ── Replay state ─────────────────────────────────────────────────────────────
 let board        = null;
 let game         = null;
+let tapMove      = null;
 let fullHistory  = [];
 let historyIdx   = 0;
 let playerColor  = 'w';
@@ -192,6 +193,9 @@ let skippedMoves = 0;
 
 // ── Board init ────────────────────────────────────────────────────────────────
 function initBoard() {
+  if (typeof createTapToMove !== 'undefined') {
+    tapMove = createTapToMove('replay-board', () => game, () => board, onDrop, () => waitingInput);
+  }
   board = Chessboard('replay-board', {
     draggable: false,
     position: 'start',
@@ -208,11 +212,13 @@ function enableDragging() {
     orientation: playerColor === 'w' ? 'white' : 'black',
     onDrop: onDrop,
     onSnapEnd: () => board.position(game.fen()),
+    onSquareClick: tapMove ? tapMove.onClick : undefined,
     pieceTheme: PIECE_THEME_REPLAY
   });
 }
 
 function disableDragging() {
+  if (tapMove) tapMove.reset();
   board.destroy();
   board = Chessboard('replay-board', {
     draggable: false,
