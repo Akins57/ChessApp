@@ -4,12 +4,7 @@
 //   Then pass tapMove.onClick as onSquareClick in the Chessboard(...) config.
 //   Call tapMove.reset() whenever a new puzzle/card is loaded.
 
-const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-
 function createTapToMove(boardId, getGame, getBoard, onDropFn, isActiveFn) {
-  // Returns { onClick, reset } — onClick is undefined on desktop (no-op)
-  if (!isMobile) return { onClick: undefined, reset: function() {} };
-
   let selected = null;
 
   function container() { return document.getElementById(boardId); }

@@ -94,10 +94,8 @@ function initBoard() {
     tapMove = createTapToMove('board', () => game, () => board, onDrop, () => !puzzleDone);
   }
   board = Chessboard('board', {
-    draggable: true,
+    draggable: false,
     position: 'start',
-    onDrop: onDrop,
-    onSnapEnd: () => board.position(game.fen()),
     onSquareClick: tapMove ? tapMove.onClick : undefined,
     pieceTheme: PIECE_THEME
   });
