@@ -212,7 +212,6 @@ function enableDragging() {
     orientation: playerColor === 'w' ? 'white' : 'black',
     onDrop: onDrop,
     onSnapEnd: () => board.position(game.fen()),
-    onSquareClick: tapMove ? tapMove.onClick : undefined,
     pieceTheme: PIECE_THEME_REPLAY
   });
 }

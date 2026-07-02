@@ -1,8 +1,7 @@
-// ── Tap-to-move for mobile ────────────────────────────────────────────────────
-// Usage (in each page's JS, after DOM ready):
-//   const tapMove = createTapToMove(boardId, getGame, getBoard, onDropFn, isActiveFn);
-//   Then pass tapMove.onClick as onSquareClick in the Chessboard(...) config.
-//   Call tapMove.reset() whenever a new puzzle/card is loaded.
+// ── Click-to-move (chess.com style) ──────────────────────────────────────────
+// Usage:
+//   createTapToMove(boardId, getGame, getBoard, onDropFn, isActiveFn);
+//   Call tapMove.reset() whenever a new puzzle/game is loaded.
 
 function createTapToMove(boardId, getGame, getBoard, onDropFn, isActiveFn) {
   let selected = null;
@@ -30,13 +29,13 @@ function createTapToMove(boardId, getGame, getBoard, onDropFn, isActiveFn) {
     });
   }
 
-  function onClick(square, piece) {
+  function handleSquare(square) {
     if (isActiveFn && !isActiveFn()) return;
 
     const gm = getGame();
     if (!gm) return;
 
-    // ── Nothing selected: pick a piece ───────────────────
+    // Nothing selected: pick a piece
     if (!selected) {
       const p = gm.get(square);
       if (p && p.color === gm.turn()) {
@@ -48,14 +47,14 @@ function createTapToMove(boardId, getGame, getBoard, onDropFn, isActiveFn) {
       return;
     }
 
-    // ── Tap same square: deselect ─────────────────────────
+    // Tap same square: deselect
     if (selected === square) {
       selected = null;
       clearHighlights();
       return;
     }
 
-    // ── Tap another own piece: switch selection ───────────
+    // Tap another own piece: switch selection
     const p = gm.get(square);
     if (p && p.color === gm.turn()) {
       selected = square;
@@ -65,21 +64,29 @@ function createTapToMove(boardId, getGame, getBoard, onDropFn, isActiveFn) {
       return;
     }
 
-    // ── Confirm move ──────────────────────────────────────
+    // Confirm move
     const from = selected;
     selected = null;
     clearHighlights();
-
     onDropFn(from, square);
-
-    // Sync board visual (replaces onSnapEnd which doesn't fire for tap)
     const b = getBoard();
     const g = getGame();
     if (b && g) b.position(g.fen());
   }
 
+  // Attach via event delegation on the board container.
+  // Works even after board.destroy() + Chessboard() re-init because the
+  // container div itself is never removed from the DOM.
+  const c = container();
+  if (c) {
+    c.addEventListener('click', function(e) {
+      const squareEl = e.target.closest('[data-square]');
+      if (!squareEl) return;
+      handleSquare(squareEl.getAttribute('data-square'));
+    });
+  }
+
   return {
-    onClick: onClick,
     reset: function() { selected = null; clearHighlights(); }
   };
 }

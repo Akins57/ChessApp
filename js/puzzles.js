@@ -96,7 +96,6 @@ function initBoard() {
   board = Chessboard('board', {
     draggable: false,
     position: 'start',
-    onSquareClick: tapMove ? tapMove.onClick : undefined,
     pieceTheme: PIECE_THEME
   });
   window.addEventListener('resize', () => board.resize());
