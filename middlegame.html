@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Middlegame Study – Chess Trainer</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/chessboard.min.css">
+</head>
+<body>
+
+<nav>
+  <span class="logo">Chess Trainer</span>
+  <a href="index.html">Home</a>
+  <a href="puzzles.html">Puzzles</a>
+  <a href="middlegame.html" class="active">Middlegame</a>
+</nav>
+
+<div class="mg-layout">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar mg-sidebar">
+    <div class="mg-progress-summary">
+      <span id="mg-overall-progress">0 / 26 topics done</span>
+    </div>
+    <div id="mg-sidebar-levels"></div>
+  </aside>
+
+  <!-- ── Main content ── -->
+  <main class="mg-main" id="mg-main">
+
+    <!-- Welcome state -->
+    <div id="mg-welcome" class="mg-welcome">
+      <div class="mg-welcome-icon">♟</div>
+      <h2>Middlegame Study</h2>
+      <p>Select a topic from the sidebar to begin.</p>
+      <p id="mg-welcome-progress" style="color:#555;font-size:0.9rem"></p>
+    </div>
+
+    <!-- Lesson content (hidden until topic selected) -->
+    <div id="mg-lesson" style="display:none">
+
+      <div class="mg-lesson-header">
+        <h1 id="mg-lesson-title"></h1>
+        <span class="mg-level-badge" id="mg-level-badge"></span>
+      </div>
+
+      <div class="mg-summary" id="mg-summary"></div>
+
+      <div class="mg-section-label">Position Examples</div>
+      <div class="mg-examples" id="mg-examples"></div>
+
+      <div class="mg-section-label mg-exercise-label">
+        Exercises
+        <span class="mg-ex-count" id="mg-ex-count"></span>
+      </div>
+      <div class="mg-exercises" id="mg-exercises"></div>
+
+      <div class="mg-done-area" id="mg-done-area">
+        <button class="btn mg-done-btn" id="mg-done-btn" onclick="markTopicDone()">
+          Mark as Done
+        </button>
+        <span class="mg-done-note" id="mg-done-note"></span>
+      </div>
+
+    </div>
+
+  </main>
+</div>
+
+<script src="js/lib/jquery.min.js"></script>
+<script src="js/lib/chess.min.js"></script>
+<script src="js/lib/chessboard.min.js"></script>
+<script src="data/middlegame_lessons.js"></script>
+<script src="js/tap-move.js"></script>
+<script src="js/middlegame.js"></script>
+</body>
+</html>
