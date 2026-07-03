@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Opening Repertoire – Chess Trainer</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/chessboard.min.css">
+</head>
+<body>
+
+<nav>
+  <span class="logo">Chess Trainer</span>
+  <a href="index.html">Home</a>
+  <a href="puzzles.html">Puzzles</a>
+  <a href="middlegame.html">Middlegame</a>
+  <a href="opening.html" class="active">Openings</a>
+</nav>
+
+<div class="op-layout">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar op-sidebar">
+    <div class="op-progress-summary" id="op-progress-summary">0 / 15 lines learned</div>
+    <div id="op-sidebar-sections"></div>
+  </aside>
+
+  <!-- ── Main content ── -->
+  <main class="op-main" id="op-main">
+
+    <!-- Welcome state -->
+    <div id="op-welcome" class="op-welcome">
+      <div class="op-welcome-icon">♟</div>
+      <h2>Opening Repertoire</h2>
+      <p>Select a line from the sidebar to begin studying.</p>
+      <p class="op-welcome-sub">15 lines covering Italian, Alapin, Advance French, Exchange Caro-Kann, Classical Pirc and more.</p>
+    </div>
+
+    <!-- Lesson content (hidden until line selected) -->
+    <div id="op-lesson" style="display:none">
+
+      <!-- Header -->
+      <div class="op-lesson-header">
+        <h1 id="op-line-name"></h1>
+        <span class="op-eco-badge" id="op-eco-badge"></span>
+      </div>
+
+      <!-- Tab toggle -->
+      <div class="op-tabs">
+        <button class="op-tab active" id="op-tab-study" onclick="switchMode('study')">Study</button>
+        <button class="op-tab" id="op-tab-test"  onclick="switchMode('test')">Test</button>
+      </div>
+
+      <!-- ── STUDY TAB ── -->
+      <div id="op-study-area" class="op-study-area">
+
+        <div class="op-board-area">
+          <!-- Board -->
+          <div>
+            <div class="board-wrap" id="op-board-wrap">
+              <div id="op-board"></div>
+            </div>
+            <!-- Comment -->
+            <div class="op-comment-area" id="op-comment" style="display:none"></div>
+            <!-- Prev / Next -->
+            <div class="op-nav-btns">
+              <button class="btn btn-secondary" id="op-prev-btn" onclick="prevMove()" disabled>◀ Prev</button>
+              <button class="btn btn-secondary" id="op-next-btn" onclick="nextMove()">Next ▶</button>
+            </div>
+          </div>
+
+          <!-- Move list -->
+          <div class="op-move-list-panel">
+            <div class="op-move-list-title">Move Order</div>
+            <div class="op-move-list" id="op-move-list"></div>
+          </div>
+        </div>
+
+        <!-- Summary + ideas -->
+        <div class="op-summary-block">
+          <div class="op-section-label">Summary</div>
+          <p class="op-summary-text" id="op-summary"></p>
+        </div>
+
+        <div class="op-ideas-block">
+          <div class="op-section-label">Key Ideas</div>
+          <ul class="op-ideas-list" id="op-ideas"></ul>
+        </div>
+
+        <!-- Mark as Learned -->
+        <div class="op-learn-area">
+          <button class="btn btn-primary op-learn-btn" id="op-learn-btn" onclick="markLearned()">Mark as Learned</button>
+          <span class="op-learn-note">Track your progress</span>
+        </div>
+
+      </div>
+
+      <!-- ── TEST TAB ── -->
+      <div id="op-test-area" class="op-test-area" style="display:none">
+
+        <div class="op-board-area">
+          <!-- Board -->
+          <div>
+            <div class="board-wrap" id="op-board-wrap-test">
+              <div id="op-board"></div>
+            </div>
+            <!-- Status -->
+            <div class="op-test-status-area">
+              <div class="op-test-status" id="op-test-status">Make your first move as White.</div>
+              <div class="op-test-complete" id="op-test-complete" style="display:none"></div>
+            </div>
+            <!-- Buttons -->
+            <div class="op-nav-btns">
+              <button class="btn btn-secondary" id="op-test-restart-btn" onclick="startTest()" style="display:none">↺ Restart</button>
+              <button class="btn btn-secondary" onclick="switchMode('study')">← Back to Study</button>
+            </div>
+          </div>
+
+          <!-- Progress in test -->
+          <div class="op-move-list-panel">
+            <div class="op-move-list-title">Your Progress</div>
+            <div class="op-test-log" id="op-test-log"></div>
+          </div>
+        </div>
+
+        <!-- Mark as Learned (also in test) -->
+        <div class="op-learn-area" id="op-test-learn-area" style="display:none">
+          <button class="btn btn-primary op-learn-btn" id="op-learn-btn-test" onclick="markLearned()">Mark as Learned</button>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="js/lib/jquery.min.js"></script>
+<script src="js/lib/chess.min.js"></script>
+<script src="js/lib/chessboard.min.js"></script>
+<script src="data/openings.js"></script>
+<script src="js/tap-move.js"></script>
+<script src="js/opening.js"></script>
+</body>
+</html>
