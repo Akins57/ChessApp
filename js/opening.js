@@ -196,7 +196,7 @@ function startTest() {
   testIdx      = 0;
   testFailed   = false;
   testLineDone = false;
-  initBoard('op-board', true);
+  initBoard('op-board-test', true);
   document.getElementById('op-test-status').textContent = 'Your move as White ▶';
   document.getElementById('op-test-status').className   = 'op-test-status';
   document.getElementById('op-test-complete').style.display  = 'none';
