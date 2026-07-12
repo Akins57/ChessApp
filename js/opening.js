@@ -7,20 +7,33 @@ let allLines = {};        // flat id → line lookup
 let currentLine   = null;
 let currentMode   = 'study';
 
-// Study mode
+// Study mode — main line
 let studyIdx       = -1;
 let studyPositions = []; // FENs: index 0 = start, index i+1 = after move i
 let studySanMoves  = []; // SAN notation for each move
+
+// Study mode — branches
+let branchData    = [];  // precomputed branches: { positions[], sanMoves[], atIndex, comments[] }
+let activeBranch  = -1;  // -1 = main line, 0+ = branch index
 
 // Test mode
 let testIdx      = 0;
 let testFailed   = false;
 let testLineDone = false;
+let testMoves    = [];   // UCI moves for this test attempt (may include branch path)
+let testSanMoves = [];   // SAN moves for this test attempt
+let testPositions = [];  // FENs for this test attempt
+let testComments  = [];  // comments for this test attempt
 
 // Board (single shared instance, swapped between modes)
 let opBoard = null;
 let opGame  = null;
 let opTap   = null;
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
+function playUci(game, uci) {
+  return game.move({ from: uci.slice(0,2), to: uci.slice(2,4), promotion: uci[4] || 'q' });
+}
 
 // ── Progress ─────────────────────────────────────────────────────────────────
 function getProgress()   { return JSON.parse(localStorage.getItem(OP_KEY) || '{}'); }
@@ -56,18 +69,65 @@ function initBoard(boardId, interactive) {
 }
 
 // ── Precompute line ───────────────────────────────────────────────────────────
-function precomputeLine(line) {
-  studyPositions = [];
-  studySanMoves  = [];
+function replayMoves(moves) {
   const g = new Chess();
-  studyPositions.push(g.fen());
-  for (const uci of line.moves) {
-    const m = g.move({ from: uci.slice(0,2), to: uci.slice(2,4), promotion: uci[4] || 'q' });
-    if (!m) { console.error('Illegal move in opening data:', uci, 'fen:', g.fen()); break; }
-    studySanMoves.push(m.san);
-    studyPositions.push(g.fen());
+  const positions = [g.fen()];
+  const sanMoves  = [];
+  for (const uci of moves) {
+    const m = playUci(g, uci);
+    if (!m) { console.error('Illegal move:', uci, 'fen:', g.fen()); break; }
+    sanMoves.push(m.san);
+    positions.push(g.fen());
+  }
+  return { positions, sanMoves };
+}
+
+function precomputeLine(line) {
+  // Main line
+  const main = replayMoves(line.moves);
+  studyPositions = main.positions;
+  studySanMoves  = main.sanMoves;
+
+  // Branches
+  branchData = [];
+  activeBranch = -1;
+  if (line.branches) {
+    for (const br of line.branches) {
+      // Replay main line up to (but not including) the branch point
+      const prefix = line.moves.slice(0, br.atIndex);
+      const branchMoves = prefix.concat([br.move], br.continuation || []);
+      const computed = replayMoves(branchMoves);
+      branchData.push({
+        atIndex:   br.atIndex,
+        name:      br.name,
+        move:      br.move,
+        comment:   br.comment,
+        positions: computed.positions,
+        sanMoves:  computed.sanMoves,
+        comments:  buildBranchComments(line, br),
+      });
+    }
   }
 }
+
+function buildBranchComments(line, br) {
+  // Comments array: main line comments up to branch point, then branch comment + continuation comments
+  const comments = [];
+  for (let i = 0; i < br.atIndex; i++) {
+    comments.push(line.comments[i] || null);
+  }
+  comments.push(br.comment || null); // the branch move itself
+  if (br.contComments) {
+    for (const c of br.contComments) comments.push(c);
+  }
+  return comments;
+}
+
+// ── Current view helpers ─────────────────────────────────────────────────────
+function viewPositions() { return activeBranch >= 0 ? branchData[activeBranch].positions : studyPositions; }
+function viewSanMoves()  { return activeBranch >= 0 ? branchData[activeBranch].sanMoves  : studySanMoves; }
+function viewComments()  { return activeBranch >= 0 ? branchData[activeBranch].comments  : currentLine.comments; }
+function viewLength()    { return viewSanMoves().length; }
 
 // ── Select line ───────────────────────────────────────────────────────────────
 function selectLine(lineId) {
@@ -112,6 +172,7 @@ function switchMode(mode) {
   document.getElementById('op-test-area').style.display  = isStudy ? 'none'  : 'flex';
 
   if (isStudy) {
+    activeBranch = -1;
     initBoard('op-board', false);
     studyIdx = -1;
     renderMoveList();
@@ -123,8 +184,9 @@ function switchMode(mode) {
 
 // ── Study mode ────────────────────────────────────────────────────────────────
 function navigateToMove(idx) {
-  studyIdx = Math.max(-1, Math.min(idx, currentLine.moves.length - 1));
-  opBoard.position(studyPositions[studyIdx + 1], false);
+  const maxIdx = viewLength() - 1;
+  studyIdx = Math.max(-1, Math.min(idx, maxIdx));
+  opBoard.position(viewPositions()[studyIdx + 1], false);
 
   // Highlight move list
   document.querySelectorAll('.op-half-move').forEach(el => {
@@ -134,10 +196,11 @@ function navigateToMove(idx) {
   });
 
   // Comment
-  const comment = studyIdx >= 0 ? currentLine.comments[studyIdx] : null;
+  const comments = viewComments();
+  const comment = studyIdx >= 0 ? (comments[studyIdx] || null) : null;
   const cEl = document.getElementById('op-comment');
   if (comment) {
-    cEl.textContent = '💬 ' + comment;
+    cEl.textContent = '\uD83D\uDCAC ' + comment;
     cEl.style.display = 'block';
   } else {
     cEl.style.display = 'none';
@@ -145,23 +208,29 @@ function navigateToMove(idx) {
 
   // Buttons
   document.getElementById('op-prev-btn').disabled = studyIdx < 0;
-  document.getElementById('op-next-btn').disabled = studyIdx >= currentLine.moves.length - 1;
+  document.getElementById('op-next-btn').disabled = studyIdx >= maxIdx;
 
   // Scroll move into view
   const active = document.querySelector('.op-half-move.current');
   if (active) active.scrollIntoView({ block: 'nearest' });
+
+  // Update branch indicators
+  renderBranchIndicators();
 }
 
-function nextMove() { if (studyIdx < currentLine.moves.length - 1) navigateToMove(studyIdx + 1); }
+function nextMove() { if (studyIdx < viewLength() - 1) navigateToMove(studyIdx + 1); }
 function prevMove() { if (studyIdx >= 0) navigateToMove(studyIdx - 1); }
 
 function renderMoveList() {
   const list = document.getElementById('op-move-list');
   list.innerHTML = '';
-  for (let i = 0; i < studySanMoves.length; i += 2) {
+  const sans = viewSanMoves();
+  const comments = viewComments();
+
+  for (let i = 0; i < sans.length; i += 2) {
     const num  = Math.floor(i / 2) + 1;
-    const wSan = studySanMoves[i]   || '';
-    const bSan = studySanMoves[i+1] || '';
+    const wSan = sans[i]   || '';
+    const bSan = sans[i+1] || '';
     const pair = document.createElement('div');
     pair.className = 'op-move-pair';
 
@@ -169,35 +238,135 @@ function renderMoveList() {
     wEl.className    = 'op-half-move';
     wEl.dataset.idx  = i;
     wEl.textContent  = wSan;
-    if (currentLine.comments[i]) wEl.classList.add('has-comment');
+    if (comments[i]) wEl.classList.add('has-comment');
 
     const bEl = document.createElement('span');
     bEl.className    = 'op-half-move';
     bEl.dataset.idx  = i + 1;
     bEl.textContent  = bSan;
-    if (bSan && currentLine.comments[i+1]) bEl.classList.add('has-comment');
+    if (bSan && comments[i+1]) bEl.classList.add('has-comment');
 
     pair.innerHTML = `<span class="op-move-num">${num}.</span>`;
     pair.appendChild(wEl);
     if (bSan) pair.appendChild(bEl);
     list.appendChild(pair);
+
+    // Insert branch indicators after the pair that contains the branch point
+    if (activeBranch === -1) {
+      // On main line — show branch alternatives at this pair
+      for (let bi = 0; bi < branchData.length; bi++) {
+        const br = branchData[bi];
+        if (br.atIndex === i + 1) {
+          const ind = document.createElement('div');
+          ind.className = 'op-branch-indicator';
+          ind.innerHTML = `<span class="op-branch-arrow">\u21B3</span> Also: <strong>${br.sanMoves[br.atIndex]}</strong> <span class="op-branch-name">(${br.name})</span>`;
+          ind.addEventListener('click', () => switchToBranch(bi));
+          list.appendChild(ind);
+        }
+      }
+    }
   }
+
+  // If on a branch, show "back to main line" at top
+  if (activeBranch >= 0) {
+    const back = document.createElement('div');
+    back.className = 'op-branch-back';
+    back.textContent = '\u21A9 Back to main line';
+    back.addEventListener('click', () => switchToBranch(-1));
+    list.insertBefore(back, list.firstChild);
+  }
+
   // Click to jump
   list.querySelectorAll('.op-half-move').forEach(el => {
     const idx = parseInt(el.dataset.idx);
-    if (!isNaN(idx) && idx < currentLine.moves.length) {
+    if (!isNaN(idx) && idx < viewLength()) {
       el.addEventListener('click', () => navigateToMove(idx));
     }
   });
 }
 
+function switchToBranch(branchIdx) {
+  activeBranch = branchIdx;
+  studyIdx = -1;
+  initBoard('op-board', false);
+  renderMoveList();
+  navigateToMove(-1);
+}
+
+function renderBranchIndicators() {
+  // Branch indicators are rendered inline in the move list (see renderMoveList)
+  // This function can be used for additional highlighting if needed
+}
+
 // ── Test mode ─────────────────────────────────────────────────────────────────
+function buildTestSequence() {
+  // Build a test path that may randomly choose branch responses at branch points
+  const line = currentLine;
+  const branches = line.branches || [];
+
+  // Build a map of branch points: atIndex → branch
+  const branchMap = {};
+  for (const br of branches) {
+    if (!branchMap[br.atIndex]) branchMap[br.atIndex] = [];
+    branchMap[br.atIndex].push(br);
+  }
+
+  // Walk through moves, randomly choosing at branch points
+  const g = new Chess();
+  testMoves    = [];
+  testSanMoves = [];
+  testPositions = [g.fen()];
+  testComments  = [];
+
+  let i = 0;
+  while (i < line.moves.length) {
+    // Check if this index is a branch point
+    if (branchMap[i]) {
+      const alternatives = branchMap[i];
+      // 50% chance of taking a random branch (if multiple, pick one)
+      if (Math.random() < 0.5) {
+        const chosen = alternatives[Math.floor(Math.random() * alternatives.length)];
+        // Play the branch move
+        const m = playUci(g, chosen.move);
+        if (!m) break;
+        testMoves.push(chosen.move);
+        testSanMoves.push(m.san);
+        testPositions.push(g.fen());
+        testComments.push(chosen.comment || null);
+
+        // Play the continuation
+        const cont = chosen.continuation || [];
+        const contComments = chosen.contComments || [];
+        for (let ci = 0; ci < cont.length; ci++) {
+          const cm = playUci(g, cont[ci]);
+          if (!cm) break;
+          testMoves.push(cont[ci]);
+          testSanMoves.push(cm.san);
+          testPositions.push(g.fen());
+          testComments.push(contComments[ci] || null);
+        }
+        return; // branch replaces the rest of the main line
+      }
+    }
+
+    // Main line move
+    const m = playUci(g, line.moves[i]);
+    if (!m) break;
+    testMoves.push(line.moves[i]);
+    testSanMoves.push(m.san);
+    testPositions.push(g.fen());
+    testComments.push(line.comments[i] || null);
+    i++;
+  }
+}
+
 function startTest() {
   testIdx      = 0;
   testFailed   = false;
   testLineDone = false;
+  buildTestSequence();
   initBoard('op-board-test', true);
-  document.getElementById('op-test-status').textContent = 'Your move as White ▶';
+  document.getElementById('op-test-status').textContent = 'Your move as White \u25B6';
   document.getElementById('op-test-status').className   = 'op-test-status';
   document.getElementById('op-test-complete').style.display  = 'none';
   document.getElementById('op-test-restart-btn').style.display = 'none';
@@ -211,7 +380,7 @@ function onTestDrop(source, target) {
   // Only accept White's turns (even indices)
   if (testIdx % 2 !== 0) return 'snapback';
 
-  const expected = currentLine.moves[testIdx];
+  const expected = testMoves[testIdx];
   const isCorrect = source === expected.slice(0,2) && target === expected.slice(2,4);
 
   const move = opGame.move({ from: source, to: target, promotion: expected[4] || 'q' });
@@ -220,13 +389,13 @@ function onTestDrop(source, target) {
   if (isCorrect) {
     opBoard.position(opGame.fen(), false);
     flashOpBoard('correct');
-    addTestLog(studySanMoves[testIdx], 'correct', currentLine.comments[testIdx]);
+    addTestLog(testSanMoves[testIdx], 'correct', testComments[testIdx]);
     testIdx++;
 
-    if (testIdx >= currentLine.moves.length) {
+    if (testIdx >= testMoves.length) {
       onTestComplete();
     } else {
-      document.getElementById('op-test-status').textContent = '✓ Correct!';
+      document.getElementById('op-test-status').textContent = '\u2713 Correct!';
       document.getElementById('op-test-status').className   = 'op-test-status ok';
       setTimeout(playTestAutoMove, 550);
     }
@@ -235,26 +404,26 @@ function onTestDrop(source, target) {
     opBoard.position(opGame.fen(), false);
     flashOpBoard('wrong');
     testFailed = true;
-    const correctSAN = studySanMoves[testIdx] || '?';
-    document.getElementById('op-test-status').textContent = `✗ Wrong! Correct was ${correctSAN}`;
+    const correctSAN = testSanMoves[testIdx] || '?';
+    document.getElementById('op-test-status').textContent = '\u2717 Wrong! Correct was ' + correctSAN;
     document.getElementById('op-test-status').className   = 'op-test-status bad';
-    addTestLog(move.san + ' (wrong)', 'wrong', `Correct: ${correctSAN}`);
+    addTestLog(move.san + ' (wrong)', 'wrong', 'Correct: ' + correctSAN);
   }
 }
 
 function playTestAutoMove() {
-  if (testIdx >= currentLine.moves.length) return;
-  const uci  = currentLine.moves[testIdx];
-  const move = opGame.move({ from: uci.slice(0,2), to: uci.slice(2,4), promotion: uci[4] || 'q' });
+  if (testIdx >= testMoves.length) return;
+  const uci  = testMoves[testIdx];
+  const move = playUci(opGame, uci);
   if (move) {
     opBoard.position(opGame.fen(), false);
     addTestLog(move.san, 'auto', null);
     testIdx++;
   }
-  if (testIdx >= currentLine.moves.length) {
+  if (testIdx >= testMoves.length) {
     onTestComplete();
   } else {
-    document.getElementById('op-test-status').textContent = 'Your move as White ▶';
+    document.getElementById('op-test-status').textContent = 'Your move as White \u25B6';
     document.getElementById('op-test-status').className   = 'op-test-status';
   }
 }
@@ -263,10 +432,10 @@ function onTestComplete() {
   testLineDone = true;
   const el = document.getElementById('op-test-complete');
   if (!testFailed) {
-    el.textContent  = '✓ Perfect! You played the line from memory.';
+    el.textContent  = '\u2713 Perfect! You played the line from memory.';
     el.className    = 'op-test-complete success';
   } else {
-    el.textContent  = '✓ Line complete — review the mistakes and try again.';
+    el.textContent  = '\u2713 Line complete \u2014 review the mistakes and try again.';
     el.className    = 'op-test-complete partial';
   }
   el.style.display = 'block';
@@ -278,7 +447,7 @@ function addTestLog(san, type, comment) {
   const log  = document.getElementById('op-test-log');
   const item = document.createElement('div');
   item.className = 'op-log-item ' + type;
-  item.innerHTML = `<span class="op-log-san">${san}</span>${comment ? `<span class="op-log-comment">${comment}</span>` : ''}`;
+  item.innerHTML = '<span class="op-log-san">' + san + '</span>' + (comment ? '<span class="op-log-comment">' + comment + '</span>' : '');
   log.appendChild(item);
   log.scrollTop = log.scrollHeight;
 }
@@ -309,7 +478,7 @@ function updateLearnBtn() {
   ['op-learn-btn','op-learn-btn-test'].forEach(id => {
     const btn = document.getElementById(id);
     if (!btn) return;
-    btn.textContent = learned ? '✓ Marked as Learned' : 'Mark as Learned';
+    btn.textContent = learned ? '\u2713 Marked as Learned' : 'Mark as Learned';
     btn.classList.toggle('op-learned-confirmed', !!learned);
   });
 }
@@ -331,7 +500,7 @@ function renderSidebar() {
     sEl.className = 'op-section';
     sEl.innerHTML = `
       <div class="op-section-header" onclick="toggleSection('${section.id}')">
-        <span class="op-section-toggle" id="op-toggle-${section.id}">▾</span>
+        <span class="op-section-toggle" id="op-toggle-${section.id}">\u25BE</span>
         <span class="op-section-name">${section.name}</span>
         <span class="op-section-badge ${section.colorClass}">${section.badge}</span>
         <span class="op-section-count">${learnedCount}/${section.lines.length}</span>
@@ -342,7 +511,7 @@ function renderSidebar() {
                data-line-id="${line.id}"
                onclick="selectLine('${line.id}')">
             <span class="op-line-name">${line.name}</span>
-            <span class="op-line-check">${prog[line.id]?.learned ? '✓' : ''}</span>
+            <span class="op-line-check">${prog[line.id]?.learned ? '\u2713' : ''}</span>
           </div>
         `).join('')}
       </div>
@@ -351,7 +520,7 @@ function renderSidebar() {
   }
 
   document.getElementById('op-progress-summary').textContent =
-    `${totalLearned} / ${totalLines} lines learned`;
+    totalLearned + ' / ' + totalLines + ' lines learned';
 }
 
 function toggleSection(id) {
@@ -359,7 +528,7 @@ function toggleSection(id) {
   const toggleEl = document.getElementById('op-toggle-' + id);
   const open     = linesEl.style.display !== 'none';
   linesEl.style.display  = open ? 'none' : 'block';
-  toggleEl.textContent   = open ? '▸' : '▾';
+  toggleEl.textContent   = open ? '\u25B8' : '\u25BE';
 }
 
 // ── Keyboard navigation ───────────────────────────────────────────────────────
